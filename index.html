@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en-ZA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Africa Route Quest</title>
+  <meta name="description" content="Africa Route Quest — Connect the Continent. A pass-and-play geography game for Grade 6.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%8D%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ============ TITLE ============ -->
+<section id="screen-title" class="screen active">
+  <div class="title-wrap">
+    <div class="title-badge">Grade 6 Geography · Pass-and-play</div>
+    <h1 class="game-title">Africa Route Quest</h1>
+    <p class="game-sub">Connect the Continent!</p>
+
+    <div class="howto">
+      <h2>How to play</h2>
+      <ol>
+        <li><span class="step-ico">📍</span><span><b>Location card:</b> find the country on the map and choose its capital. Correct = <b>2 points</b>. If you miss, the next team can <b>steal</b> for 1 point.</span></li>
+        <li><span class="step-ico">🎲</span><span><b>Roll the die</b> and travel along the routes: 1–2 = 1 route, 3–4 = up to 2, 5–6 = up to 3.</span></li>
+        <li><span class="step-ico">⚡</span><span><b>Challenge card</b> at your new hub: earn the points printed on the card (1–3).</span></li>
+        <li><span class="step-ico">🛤️</span><span><b>Claim the route</b> you travelled: name the two countries and the border(s) it crosses for <b>2 bonus points</b>.</span></li>
+        <li><span class="step-ico">🏁</span><span>The game ends when every team has answered <b>6 challenge cards</b> or the <b>timer</b> runs out. Highest score wins!</span></li>
+      </ol>
+      <p class="howto-note">Before every answer: <b>check the map first!</b> Someone who didn't choose the answer must explain it.</p>
+    </div>
+
+    <button id="btnToSetup" class="btn btn-primary btn-xl">Start ➜</button>
+    <p id="dataWarning" class="data-warning hidden"></p>
+  </div>
+</section>
+
+<!-- ============ SETUP ============ -->
+<section id="screen-setup" class="screen">
+  <div class="setup-wrap">
+    <h1 class="setup-title">Set up your teams</h1>
+
+    <div class="setup-row">
+      <span class="setup-label">Number of teams</span>
+      <div class="seg" id="teamCount" role="radiogroup" aria-label="Number of teams">
+        <button class="seg-btn" data-n="2" role="radio">2</button>
+        <button class="seg-btn" data-n="3" role="radio">3</button>
+        <button class="seg-btn" data-n="4" role="radio">4</button>
+      </div>
+    </div>
+
+    <div id="teamRows" class="team-rows"></div>
+
+    <div class="setup-row">
+      <span class="setup-label">Game timer</span>
+      <div class="seg" id="timerChoice" role="radiogroup" aria-label="Game timer">
+        <button class="seg-btn" data-min="15" role="radio">15 min</button>
+        <button class="seg-btn" data-min="25" role="radio">25 min</button>
+        <button class="seg-btn" data-min="35" role="radio">35 min</button>
+      </div>
+    </div>
+
+    <p id="setupError" class="setup-error" role="alert"></p>
+    <div class="setup-actions">
+      <button id="btnBackTitle" class="btn btn-ghost">← Back</button>
+      <button id="btnStartGame" class="btn btn-primary btn-xl">Let's go! 🚀</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ GAME ============ -->
+<section id="screen-game" class="screen">
+  <header class="topbar">
+    <div class="brand">🌍 <span>Africa Route Quest</span></div>
+    <div id="turnChip" class="turn-chip"></div>
+    <div class="timer-box">
+      <span id="timer" class="timer" aria-live="off">25:00</span>
+      <button id="btnPause" class="btn btn-small" title="Pause or resume the timer">⏸ Pause</button>
+    </div>
+    <div class="teacher-tools">
+      <button id="btnLabels" class="btn btn-small toggle" aria-pressed="false" title="Show or hide country names on the map">🏷️ Labels</button>
+      <button id="btnTips" class="btn btn-small toggle" aria-pressed="true" title="Show country names when you hover or tap">💬 Tooltips</button>
+      <button id="btnWorld" class="btn btn-small toggle" aria-pressed="true" title="Show or hide the world map">🗺️ World</button>
+      <button id="btnEndGame" class="btn btn-small btn-ghost" title="End the game now">End game</button>
+    </div>
+  </header>
+
+  <div class="game-layout">
+    <div class="map-wrap" id="mapWrap">
+      <svg id="mainMap" role="img" aria-label="Political map of Africa with route hubs"></svg>
+      <div class="zoom-ctrls">
+        <button id="zoomIn" class="btn btn-round" aria-label="Zoom in">＋</button>
+        <button id="zoomOut" class="btn btn-round" aria-label="Zoom out">－</button>
+        <button id="zoomReset" class="btn btn-round" aria-label="Reset zoom">⟲</button>
+      </div>
+      <div id="inset" class="inset">
+        <div class="inset-title">World map · Equal Earth</div>
+        <svg id="worldMap" role="img" aria-label="World map in the Equal Earth projection"></svg>
+      </div>
+      <div class="legend">
+        <span><i class="lg-hub"></i> Hub</span>
+        <span><i class="lg-cap">★</i> Capital city</span>
+        <span><i class="lg-route"></i> Route</span>
+      </div>
+      <div id="tooltip" class="tooltip hidden" role="status"></div>
+      <div id="mapHint" class="map-hint hidden"></div>
+    </div>
+
+    <aside class="side">
+      <div id="scoreboard" class="scoreboard"></div>
+      <div id="cardArea" class="card-area" aria-live="polite"></div>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ END ============ -->
+<section id="screen-end" class="screen">
+  <div class="end-wrap" id="endWrap"></div>
+</section>
+
+<div id="modal" class="modal hidden" role="dialog" aria-modal="true"><div class="modal-box" id="modalBox"></div></div>
+<div id="toast" class="toast hidden" role="status"></div>
+
+<script src="vendor/d3.min.js"></script>
+<script src="vendor/topojson-client.min.js"></script>
+<script src="data/countries-50m.js"></script>
+<script src="data/questions.js"></script>
+<script src="js/map.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
