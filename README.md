@@ -20,27 +20,42 @@ It runs entirely in the browser. You don't need to install anything, create an a
 
    Tap a glowing hub to travel along a route line. You can only move between hubs that a line joins.
 4. **Challenge card (1–3 points):** answer the card drawn at your new hub. There are three kinds of card, each with its own colour and icon:
-   - 🌊 **Ocean & Map** (blue)
-   - 📍 **Location** (green)
-   - ⚡ **Challenge** (orange)
+   - **Ocean & Map** (blue, wave icon)
+   - **Location** (green, pin icon)
+   - **Challenge** (orange, lightning icon)
 5. **Claim the route (+2 bonus points, optional):** name the two countries the route you just travelled connects and the border(s) it crosses. If you're right, the route turns your colour.
 6. **Pass** is on every question. Passing never costs you points.
 7. **Before every answer** the game reminds you: *"Check the map first! Someone who didn't choose the answer must explain it."*
 
 **The game ends** when every team has answered **6 challenge cards** or when the **timer runs out**. The highest score wins. If the top scores are tied, the tied teams play a **sudden-death tiebreaker**: each team finds one country on the map, and if exactly one team gets it right, that team wins. If more than one team gets it right, or nobody does, they play another round (up to 5).
 
+### On the home screen
+
+- **Start Playing** goes to team set-up.
+- **How to Play** is a 6-step picture guide (Back / Next, Skip, "Let's play!"). Players can also open it during a game with the **Help** button.
+- **For teachers** shows the learning outcomes, time needed (25–35 minutes), players (2–4 teams) and grade.
+
+### While playing
+
+- The **"What to do now" bar** under the top bar always shows whose turn it is (in the team's colour) and exactly what to do next.
+- The **step tracker** (Location card → Roll → Move → Challenge → Claim route) lights up the current step.
+- The thing to click next **pulses**. Pins you can't move to, and the map when it isn't needed, are **greyed out**.
+- **Word help** explains a geography word (like *landlocked*, *border* or *Equator*) the first time it comes up in a game.
+- After each answer, a short result shows the right answer and one simple fact. Points are awarded with a passport-style stamp.
+
 ### Teacher controls (top bar)
 
 | Button | What it does |
 |---|---|
-| ⏸ Pause | Pauses or resumes the timer |
-| 🏷️ Labels | Shows or hides country and capital names on the map (easier or harder) |
-| 💬 Tooltips | Shows a country's name when you hover over it or tap it. To keep "find the country" questions fair, names stay hidden while a team is searching unless Labels is on. |
-| 🗺️ World | Shows or hides the small Equal Earth world map |
-| End game | Ends the game straight away and shows the scores |
+| Pause | Pauses or resumes the timer |
+| Help | Opens the How to Play guide |
+| Names | Shows or hides country and capital names on the map (easier or harder) |
+| Hints | Shows a country's name when you point at it or tap it. To keep "find the country" questions fair, names stay hidden while a team is searching unless Names is on. |
+| World | Shows or hides the small Equal Earth world map |
+| End | Ends the game straight away and shows the scores |
 | ＋ / － / ⟲ | Zoom in, zoom out and reset the map. You can also pinch or scroll to zoom and drag to move the map. |
 
-Every card has a **🔊 Read aloud** button that uses the browser's built-in voice.
+Every card has a **Read aloud** button that uses the browser's built-in voice.
 
 ## Editing the questions
 
@@ -56,7 +71,7 @@ All the content lives in **`data/questions.js`**. You can open it in any plain-t
 ```js
 { type: "ocean", points: 2, kind: "mc", q: "Which ocean is east of Madagascar?",
   options: ["Indian Ocean", "Atlantic Ocean", "Pacific Ocean", "Arctic Ocean"], answer: "Indian Ocean",
-  explain: "Madagascar is surrounded by the Indian Ocean." },
+  explain: "Madagascar has the Indian Ocean all around it." },
 ```
 
 **To add a "tap the map" card**, list the country names that count as correct. Spell them exactly as they appear in the `countries` list:
@@ -67,6 +82,7 @@ All the content lives in **`data/questions.js`**. You can open it in any plain-t
 ```
 
 Rules:
+- Keep the wording short and simple: Grade 6 learners read these on their own.
 - `type` must be `"ocean"`, `"location"` or `"challenge"`.
 - `points` must be 1, 2 or 3.
 - For multiple-choice cards, `answer` must match one of the `options` exactly, including capital letters.
@@ -95,7 +111,9 @@ It checks that every country name matches the map file, that capital stars sit i
 
 - Plain HTML, CSS and JavaScript. There is no build step, no framework and no server.
 - The maps use [D3](https://d3js.org) with the **Equal Earth** projection, drawn from the [world-atlas](https://github.com/topojson/world-atlas) `countries-50m` map data (Natural Earth). The libraries and data are stored in `vendor/` and `data/`, so the game doesn't depend on any CDN. `data/countries-50m.js` is the same map data wrapped as a script so the game also works when you double-click `index.html`.
-- Licences: D3 and topojson-client (ISC) are in `vendor/`. world-atlas (ISC) is in `data/`. The Natural Earth map data is public domain.
+- Fonts: **Lilita One** (headings) and **Atkinson Hyperlegible** (body text, designed for easy reading) from Google Fonts. They are stored in `fonts/` and embedded in `css/fonts.css`, so they also work offline and when you double-click `index.html`.
+- Icons are hand-drawn style SVGs in `js/icons.js`.
+- Licences: D3 and topojson-client (ISC) are in `vendor/`. world-atlas (ISC) is in `data/`. The Natural Earth map data is public domain. Both fonts use the SIL Open Font License (`fonts/OFL-*.txt`).
 
 ## Hosting
 

@@ -4,8 +4,12 @@
   const D = window.GAME_DATA;
   const TOPO = window.WORLD_TOPO;
   const W = 1000, H = 920;
-  const PALETTE = ['#ffd3a1', '#c6ebbd', '#bcdcff', '#f7c5dd', '#fff0a0', '#d8ccfb'];
+  // earthy pastel tints, so neighbouring countries are easy to tell apart
+  const PALETTE = ['#f2d79c', '#d6e2ae', '#efc5a2', '#c7dcc2', '#f6e5ba', '#e2c9a6'];
   const SMALL_AREA = 70; // countries smaller than this (px² at zoom 1) get a round tap target
+  // map pin: tip at (0,0), round head centred at (0,-22.5)
+  const PIN = 'M0 0C-2.5-7.5-12-13.5-12-22.5a12 12 0 1 1 24 0C12-13.5 2.5-7.5 0 0z';
+  const PIN_HEAD = -22.5;
   // Where each hub's name sits so the labels don't overlap
   const HUB_LABEL = {
     cairo: 'above', algiers: 'above', dakar: 'left', lagos: 'below', kinshasa: 'left', nairobi: 'right',
@@ -21,6 +25,7 @@
   const capByCountry = new Map();      // country name -> [star elements]
   const hubXY = new Map();             // hub id -> [x, y]
   let routeLayer, hubLayer, counterLayer;
+  let features = [];
 
   api.namesVisible = () => labelsOn || (tipsOn && !hideNames);
 
@@ -35,7 +40,7 @@
     });
 
     const geoms = TOPO.objects.countries.geometries;
-    const features = topojson.feature(TOPO, TOPO.objects.countries).features;
+    features = topojson.feature(TOPO, TOPO.objects.countries).features;
     const neighbours = topojson.neighbors(geoms);
     const found = new Set();
     features.forEach((f) => { const c = countryByTopo.get(f.properties.name); if (c) found.add(c.name); });
@@ -60,7 +65,7 @@
       colourOf.set(i, ci % PALETTE.length);
     });
 
-    const gCountries = root.append('g');
+    const gCountries = root.append('g').attr('class', 'countries-g');
     const smallOnes = [];
     features.forEach((f, i) => {
       const name = f.properties.name;
@@ -73,7 +78,7 @@
         if (geoPath.area(f) < SMALL_AREA && !smallOnes.includes(c)) smallOnes.push(c);
       } else if (name === 'W. Sahara') {
         p.classed('af disputed', true)
-          .on('pointermove', (e) => showTip(e, 'Western Sahara (disputed territory)'))
+          .on('pointermove', (e) => showTip(e, 'Western Sahara (disputed area)'))
           .on('pointerleave', hideTip)
           .on('click', () => { if (mode === 'country' && handlers.disputed) handlers.disputed(); });
       } else {
@@ -94,11 +99,11 @@
     };
     place('sea-label', 'ATLANTIC OCEAN', [-16, -12], 18);
     place('sea-label', 'INDIAN OCEAN', [55, -30], 18);
-    place('sea-label', 'MEDITERRANEAN SEA', [18, 34.6], 14);
+    place('sea-label', 'MEDITERRANEAN SEA', [21, 36.3], 13);
     place('sea-label', 'Red Sea', [39.2, 19.5], 11);
     place('sea-label', 'Gulf of Guinea', [3, 2.2], 11);
-    place('cont-label', 'EUROPE', [14, 42.5], 18);
-    place('cont-label', 'ASIA', [47, 16.5], 20);
+    place('cont-label', 'EUROPE', [14, 42.5], 20);
+    place('cont-label', 'ASIA', [47, 16.5], 22);
     place('eq-label', 'Equator 0°', [-24, 0.9], 13);
 
     // Round tap targets for very small countries (mostly islands)
@@ -131,7 +136,7 @@
       });
     });
 
-    // Country name labels (shown with the Labels toggle)
+    // Country name labels (shown with the Names toggle)
     D.countries.forEach((c) => {
       const fs = features.filter((f) => countryByTopo.get(f.properties.name) === c);
       if (!fs.length) return;
@@ -151,25 +156,25 @@
         .append('text').attr('class', 'label').attr('font-size', 11.5).attr('dy', '-0.2em').text(short);
     });
 
-    // Hubs
+    // Hubs (map pins)
     hubLayer = root.append('g');
     D.hubs.forEach((h) => {
       const [x, y] = projection([h.lon, h.lat]);
       hubXY.set(h.id, [x, y]);
       const g = hubLayer.append('g').attr('class', 'hub').attr('data-id', h.id).attr('transform', `translate(${x},${y})`);
       const s = g.append('g').attr('class', 'sc');
-      s.append('circle').attr('class', 'hub-ring').attr('r', 24);
-      s.append('circle').attr('class', 'hub-dot').attr('r', 15);
-      s.append('circle').attr('class', 'hub-inner').attr('r', 4.5);
-      s.append('circle').attr('r', 28).attr('fill', 'transparent'); // bigger tap area
+      s.append('circle').attr('class', 'hub-ring').attr('cy', PIN_HEAD).attr('r', 19);
+      s.append('path').attr('class', 'hub-pin').attr('d', PIN);
+      s.append('circle').attr('class', 'hub-dot').attr('cy', PIN_HEAD).attr('r', 4.8);
+      s.append('circle').attr('cy', -16).attr('r', 27).attr('fill', 'transparent'); // bigger tap area
       const pos = HUB_LABEL[h.id] || 'below';
       const t = s.append('text').attr('class', 'hub-label').text(h.city);
-      if (pos === 'below') t.attr('y', 36);
-      if (pos === 'above') t.attr('y', -24);
-      if (pos === 'left') t.attr('x', -24).attr('y', 5).attr('text-anchor', 'end');
-      if (pos === 'right') t.attr('x', 24).attr('y', 5).attr('text-anchor', 'start');
+      if (pos === 'below') t.attr('y', 19);
+      if (pos === 'above') t.attr('y', -41);
+      if (pos === 'left') t.attr('x', -16).attr('y', -17).attr('text-anchor', 'end');
+      if (pos === 'right') t.attr('x', 16).attr('y', -17).attr('text-anchor', 'start');
       g.on('click', (e) => { e.stopPropagation(); if (mode === 'hub' && handlers.hub) handlers.hub(h.id); })
-        .on('pointermove', (e) => showTip(e, h.city + ' hub — ' + (h.hubNote || h.country)))
+        .on('pointermove', (e) => showTip(e, `${h.city}: ${h.hubNote || h.country}`))
         .on('pointerleave', hideTip);
     });
     counterLayer = root.append('g');
@@ -181,6 +186,7 @@
         k = e.transform.k;
         root.style('--k', k);
         svg.selectAll('.sc').attr('transform', `scale(${1 / k})`);
+        dotRoutes();
         counterLayer.classed('zooming', true);
         clearTimeout(zoomEndTimer); zoomEndTimer = setTimeout(() => counterLayer.classed('zooming', false), 150);
         api.renderCounters(lastTeams);
@@ -190,7 +196,8 @@
     document.getElementById('zoomOut').onclick = () => svg.transition().duration(250).call(zoom.scaleBy, 1 / 1.6);
     document.getElementById('zoomReset').onclick = () => api.resetZoom();
 
-    drawWorld(features);
+    drawWorld();
+    drawHero();
     return { missing };
   };
 
@@ -220,7 +227,12 @@
   }
   function hideTip() { tip.classList.add('hidden'); }
 
-  function drawWorld(features) {
+  // routes are drawn as dots; keep the gaps the same size on screen at every zoom level
+  function dotRoutes() {
+    routeLayer.selectAll('.route').attr('stroke-dasharray', `0 ${13 / k}`);
+  }
+
+  function drawWorld() {
     const ws = d3.select('#worldMap');
     const VW = 360, VH = 180;
     ws.attr('viewBox', `0 0 ${VW} ${VH}`);
@@ -244,17 +256,66 @@
     lab2('Pacific', 'Ocean', [-140, -12]);
     // the Mediterranean is tiny at this size, so its label sits over the Atlantic with a pointer line
     const [mx, my] = proj([15, 35.5]), [tx, ty] = proj([-60, 60]);
-    ws.append('line').attr('x1', tx + 14).attr('y1', ty + 2).attr('x2', mx).attr('y2', my).attr('stroke', '#245f8f').attr('stroke-width', .8);
-    ws.append('circle').attr('cx', mx).attr('cy', my).attr('r', 1.6).attr('fill', '#245f8f');
+    ws.append('line').attr('x1', tx + 14).attr('y1', ty + 2).attr('x2', mx).attr('y2', my).attr('stroke', '#245a74').attr('stroke-width', .8);
+    ws.append('circle').attr('cx', mx).attr('cy', my).attr('r', 1.6).attr('fill', '#245a74');
     lab('Mediterranean Sea', [-60, 60], 'sea');
     lab('Equator', [-178, -2.5], 'eq');
   }
+
+  // Simple picture of Africa with a few routes and pins, for the home screen
+  function drawHero() {
+    const el = document.getElementById('heroMap');
+    if (!el) return;
+    const VW = 460, VH = 500;
+    const hs = d3.select(el).attr('viewBox', `0 0 ${VW} ${VH}`);
+    const isAf = (g) => countryByTopo.has(g.properties.name) || g.properties.name === 'W. Sahara';
+    const geoms = TOPO.objects.countries.geometries.filter(isAf);
+    const land = topojson.merge(TOPO, geoms);
+    const proj = d3.geoEqualEarth().fitExtent([[18, 44], [VW - 18, VH - 14]], land);
+    const p = d3.geoPath(proj);
+    hs.append('path').attr('class', 'hero-land').attr('d', p(land));
+    hs.append('path').attr('class', 'hero-borders').attr('d', p(topojson.mesh(TOPO, TOPO.objects.countries, (a, b) => a !== b && isAf(a) && isAf(b))));
+    hs.append('path').attr('class', 'equator').attr('d', p({ type: 'LineString', coordinates: d3.range(-20, 56, 2).map((x) => [x, 0]) }));
+    const sea = (t, ll) => { const [x, y] = proj(ll); hs.append('text').attr('class', 'hero-sea').attr('x', x).attr('y', y).attr('text-anchor', 'middle').text(t); };
+    sea('ATLANTIC', [-12, -18]);
+    sea('INDIAN OCEAN', [58, -24]);
+    const ids = ['gaborone-capetown', 'lusaka-gaborone', 'dodoma-lusaka', 'nairobi-dodoma', 'nairobi-addis', 'addis-cairo', 'cairo-algiers', 'dakar-lagos', 'lagos-kinshasa'];
+    const used = new Set();
+    ids.forEach((id) => {
+      const r = D.routes.find((x) => x.id === id);
+      if (!r) return;
+      used.add(r.a); used.add(r.b);
+      hs.append('path').attr('class', 'hero-route').attr('d', p({ type: 'LineString', coordinates: r.path }));
+    });
+    const named = { cairo: 'right', lagos: 'below', nairobi: 'right', capetown: 'right', dakar: 'below' };
+    D.hubs.filter((h) => used.has(h.id)).forEach((h) => {
+      const [x, y] = proj([h.lon, h.lat]);
+      const g = hs.append('g').attr('transform', `translate(${x},${y}) scale(.85)`);
+      g.append('path').attr('class', 'hero-pin').attr('d', PIN);
+      g.append('circle').attr('class', 'hero-pin-dot').attr('cy', PIN_HEAD).attr('r', 4.6);
+      if (named[h.id]) {
+        const t = g.append('text').attr('class', 'hero-label').text(h.city);
+        if (named[h.id] === 'right') t.attr('x', 15).attr('y', -16);
+        else t.attr('y', 20).attr('text-anchor', 'middle');
+      }
+    });
+  }
+
+  // outline of Africa (and optionally one country) fitted into a box, for the How to Play pictures
+  api.africaArt = function (box, countryName) {
+    const isAf = (g) => countryByTopo.has(g.properties.name) || g.properties.name === 'W. Sahara';
+    const land = topojson.merge(TOPO, TOPO.objects.countries.geometries.filter(isAf));
+    const p = d3.geoPath(d3.geoEqualEarth().fitExtent(box, land));
+    const c = countryName && features.find((f) => (countryByTopo.get(f.properties.name) || {}).name === countryName);
+    return { land: p(land), country: c ? p(c) : '', point: (ll) => p.projection()(ll) };
+  };
 
   api.setMode = function (m) {
     mode = m;
     svg.classed('mode-hub', m === 'hub').classed('mode-country', m === 'country');
     if (m !== 'country') hideTip();
   };
+  api.setQuiet = function (on) { svg.classed('quiet', on); };
   api.setLabels = function (on) { labelsOn = on; svg.classed('labels-off', !on); };
   api.setTooltips = function (on) { tipsOn = on; if (!on) hideTip(); };
   api.setHideNames = function (on) { hideNames = on; if (on) hideTip(); };
@@ -282,7 +343,8 @@
     routeLayer.selectAll('*').remove();
     D.routes.forEach((r) => {
       const d = geoPath({ type: 'LineString', coordinates: r.path });
-      routeLayer.append('path').attr('class', 'route-case').attr('d', d);
+      const c = routeLayer.append('path').attr('class', 'route-case').attr('d', d);
+      if (claimed[r.id]) c.classed('claimed', true).style('--team', claimed[r.id]);
     });
     D.routes.forEach((r) => {
       const d = geoPath({ type: 'LineString', coordinates: r.path });
@@ -290,9 +352,10 @@
       if (claimed[r.id]) p.classed('claimed', true).style('stroke', claimed[r.id]);
       if ((opts.options || []).includes(r.id)) p.classed('option', true).style('--team', opts.colour);
       if ((opts.travelled || []).includes(r.id)) {
-        routeLayer.append('path').attr('class', 'route travelled').attr('d', d).style('stroke', '#fff');
+        routeLayer.append('path').attr('class', 'route travelled').attr('d', d);
       }
     });
+    dotRoutes();
   };
 
   api.highlightHubs = function (reachable, hereId, colour) {
@@ -300,7 +363,9 @@
       const id = this.getAttribute('data-id');
       this.classList.toggle('reachable', reachable.includes(id));
       this.classList.toggle('here', id === hereId);
-      this.style.setProperty('--team', colour || '#ff8a00');
+      // while moving, grey out the pins you can't travel to
+      this.classList.toggle('dim', reachable.length > 0 && !reachable.includes(id) && id !== hereId);
+      this.style.setProperty('--team', colour || '#c4492d');
     });
   };
 
@@ -310,19 +375,20 @@
     const sel = counterLayer.selectAll('g.counter').data(lastTeams, (t) => t.id);
     sel.exit().remove();
     const enter = sel.enter().append('g').attr('class', 'counter');
-    enter.append('circle').attr('r', 11);
+    enter.append('circle').attr('class', 'tok').attr('r', 11.5);
+    enter.append('circle').attr('class', 'tok-ring').attr('r', 8);
     enter.append('text');
     const all = enter.merge(sel);
-    all.select('circle').attr('fill', (t) => t.colour);
+    all.select('.tok').attr('fill', (t) => t.colour);
     all.select('text').text((t) => t.name.trim().charAt(0).toUpperCase() || '?');
     all.each(function (t) {
-      // spread teams that share a hub around it
+      // tokens sit beside the pin head, on the side away from the city's name
       const same = lastTeams.filter((o) => o.hub === t.hub);
       const idx = same.indexOf(t);
-      const base = { below: -Math.PI / 2, above: Math.PI / 2, left: 0, right: Math.PI }[HUB_LABEL[t.hub] || 'below'];
-      const ang = base + (idx - (same.length - 1) / 2) * 0.8;
+      const side = HUB_LABEL[t.hub] === 'right' ? -1 : 1;
       const [hx, hy] = hubXY.get(t.hub);
-      const x = hx + (Math.cos(ang) * 27) / k, y = hy + (Math.sin(ang) * 27) / k;
+      const x = hx + (side * 27) / k;
+      const y = hy + (PIN_HEAD + (idx - (same.length - 1) / 2) * 21) / k;
       this.style.transform = `translate(${x}px, ${y}px) scale(${1 / k})`;
     });
   };
